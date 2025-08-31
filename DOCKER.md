@@ -118,7 +118,7 @@ node -e "const bcrypt=require('bcryptjs'); console.log(bcrypt.hashSync('MyPasswo
 ADMIN_PASSWORD=$2b$10$xyz...  # Your bcrypt hash
 ```
 
-⚠️ **Security Warning:** The default password `admin123` is used if no `ADMIN_PASSWORD` is set. Always change this in production!
+### ⚠️ **Advertencia de Seguridad:** La Contraseña por default es `admin123` si no se define ninguna en el archivo `.env` en la variable `ADMIN_PASSWORD`.
 
 ## Revision de Salud
 
@@ -154,4 +154,4 @@ $ curl http://localhost:3000/api/health
 ## Desarrollo
 
 Para desarrollo, se aceptan sugerencias directamente al correo, no se le dara acceso por el momento y tal vez 
-jamas al proyecto a nadie y intentar levantar ISSUES, estaran desactivados.
+jamas al proyecto a nadie, tampoco se responderan ISSUES estaran desactivados.
