@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Photo Frame - Select Folder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/basecoat.cdn.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/js/all.min.js" defer></script>
+    <link rel="stylesheet" href="css/folder-selection-extensions.css">
+    
+    <!-- Theme Switcher Script -->
+    <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem('themeMode');
+        if (stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (_) {}
+      
+      document.addEventListener('basecoat:theme', (e) => {
+        const mode = e.detail?.mode || (document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+        if (mode === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('themeMode', mode);
+      });
+    })();
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="btn-icon back-btn" onclick="goBack()">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h1 class="title">Select Folder</h1>
+        </div>
+        <div class="header-right">
+            <a href="/slideshow" class="btn slideshow-btn">
+                <span class="material-symbols-outlined">slideshow</span>
+                <span>Start Slideshow</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="current-selection">
+            <div class="selection-header">
+                <span class="material-symbols-outlined">check_circle</span>
+                <div class="selection-title">Current Selection</div>
+            </div>
+            <div class="selection-info" id="currentSelection">
+                All Folders - All images will be shown
+            </div>
+        </div>
+
+        <div class="folder-browser-container">
+            <div class="browser-header">
+                <h2 class="browser-title">Choose a Folder</h2>
+                <p class="browser-subtitle">Select a folder to display only images from that folder in the slideshow</p>
+            </div>
+            
+            <div id="folderBrowser">
+                <!-- Folder browser will be initialized here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Load required scripts -->
+    <script src="/js/folderService.js"></script>
+    <script src="/js/folderStorage.js"></script>
+    <script src="/js/folderBrowser.js"></script>
+
+    <script>
+        let folderBrowser;
+        
+        // Initialize folder browser when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFolderBrowser();
+            updateCurrentSelection();
+        });
+
+        function initializeFolderBrowser() {
+            const container = document.getElementById('folderBrowser');
+            
+            folderBrowser = new FolderBrowser(container, {
+                showBreadcrumb: true,
+                showAllFoldersOption: true,
+                onFolderSelected: onFolderSelected,
+                onFolderChanged: onFolderChanged
+            });
+        }
+
+        function onFolderSelected(folderPath, folderName) {
+            console.log('Folder selected:', folderPath, folderName);
+            updateCurrentSelection();
+            
+            // Show success feedback
+            showNotification(`Selected: ${folderName}`, 'success');
+        }
+
+        function onFolderChanged(folderPath, folderName) {
+            console.log('Folder changed:', folderPath, folderName);
+            updateCurrentSelection();
+        }
+
+        function updateCurrentSelection() {
+            const storage = new FolderStorage();
+            const selection = storage.loadSelectedFolder();
+            const selectionElement = document.getElementById('currentSelection');
+            
+            if (selection) {
+                selectionElement.textContent = `${selection.name} - Images from this folder will be shown`;
+            } else {
+                selectionElement.textContent = 'All Folders - All images will be shown';
+            }
+        }
+
+        function goBack() {
+            // Check if there's a referrer, otherwise go to slideshow
+            if (document.referrer && document.referrer !== window.location.href) {
+                window.history.back();
+            } else {
+                window.location.href = '/slideshow';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            // Add animation keyframes if not already added
+            if (!document.getElementById('notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Handle browser navigation
+        window.addEventListener('popstate', () => {
+            goBack();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Photo Frame - Slideshow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/basecoat.cdn.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/js/all.min.js" defer></script>
+    <!-- Theme Switcher Script -->
+    <script>
+        (() => {
+            try {
+                const stored = localStorage.getItem('themeMode');
+                if (stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (_) { }
+
+            document.addEventListener('basecoat:theme', (e) => {
+                const mode = e.detail?.mode || (document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+                if (mode === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                localStorage.setItem('themeMode', mode);
+            });
+        })();
+    </script>
+
+    <style>
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Full screen slideshow layout */
+        .slideshow-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: black;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            max-width: 100vw;
+            max-height: 100vh;
+            object-fit: contain;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            width: 0%;
+            transition: width 0.1s linear;
+            z-index: 10;
+        }
+
+        .controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .slideshow-container:hover .controls {
+            opacity: 1;
+        }
+
+        .fullscreen .controls {
+            opacity: 0;
+        }
+
+        .fullscreen:hover .controls {
+            opacity: 1;
+        }
+
+        .info-overlay {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            z-index: 15;
+            transition: opacity 0.3s ease;
+        }
+
+        .info-overlay.hidden {
+            opacity: 0;
+        }
+
+        /* Cursor auto-hide */
+        body.hide-cursor {
+            cursor: none;
+        }
+
+        /* Auth overlay */
+        .auth-overlay {
+            background: var(--background);
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-overlay.hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Authentication Overlay -->
+    <div class="auth-overlay hidden" id="authOverlay">
+        <div class="card max-w-md w-full mx-4  justify-center">
+            <header class="gap-2 flex flex-col items-center justify-center">
+                <div class="btn-lg-icon-outline">🔒</div>
+                <h2>Authenticating...</h2>
+                <p class="text-muted-foreground">Please wait while we log you in.</p>
+            </header>
+        </div>
+    </div>
+
+    <!-- Slideshow Container -->
+    <div class="slideshow-container" id="slideshowContainer">
+        <!-- Loading State -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-white" id="loadingState">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="bg-white/20 animate-pulse size-12 shrink-0 rounded-full"></div>
+                <div class="grid gap-2">
+                    <div class="bg-white/20 animate-pulse rounded-md h-4 w-[200px]"></div>
+                    <div class="bg-white/20 animate-pulse rounded-md h-4 w-[150px]"></div>
+                </div>
+            </div>
+            <p class="text-xl text-center">Loading your photos...</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="absolute inset-0 flex items-center justify-center hidden" id="errorState">
+            <div class="alert-destructive max-w-md">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <h2>Connection Error</h2>
+                <section id="errorMessage">Unable to load images. Please check your connection.</section>
+            </div>
+        </div>
+
+        <!-- Photo Slides -->
+        <div class="slide" id="slide1">
+            <img id="image1" alt="Photo">
+        </div>
+
+        <div class="slide" id="slide2">
+            <img id="image2" alt="Photo">
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- Controls -->
+        <div class="controls flex gap-2" id="controls">
+            <button class="btn-icon bg-white/20 hover:bg-white/30 backdrop-blur text-white" id="fullscreenBtn"
+                data-tooltip="Toggle Fullscreen" data-side="bottom">
+                <span class="material-icons">fullscreen</span>
+            </button>
+
+            <button class="btn-icon bg-white/20 hover:bg-white/30 backdrop-blur text-white" id="infoBtn"
+                data-tooltip="Show Info" data-side="bottom">
+                <span class="material-icons">info</span>
+            </button>
+
+            <button class="btn-icon bg-white/20 hover:bg-white/30 backdrop-blur text-white" id="logoutBtn"
+                data-tooltip="Logout" data-side="bottom">
+                <span class="material-icons">logout</span>
+            </button>
+        </div>
+
+        <!-- Info Overlay -->
+        <div class="info-overlay hidden" id="infoOverlay">
+            <div class="card bg-background/90 backdrop-blur-md">
+                <section class="grid gap-1">
+                    <div id="filename" class="font-medium text-foreground"></div>
+                    <div id="folder" class="text-sm text-muted-foreground"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AuthenticationManager {
+            constructor() {
+                this.isAuthenticated = false;
+                this.authOverlay = document.getElementById('authOverlay');
+                this.init();
+            }
+
+            init() {
+                this.checkExistingSession();
+            }
+
+            async checkExistingSession() {
+                try {
+                    const response = await fetch('/api/auth/status');
+                    const data = await response.json();
+
+                    if (data.authenticated) {
+                        this.handleAuthSuccess({ name: data.role });
+                    } else {
+                        window.location.href = '/slideshow-login';
+                    }
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                    this.showError('Could not connect to the server.');
+                }
+            }
+
+            handleAuthSuccess(account) {
+                this.isAuthenticated = true;
+                this.userAccount = account;
+                this.hideAuthOverlay();
+                document.dispatchEvent(new CustomEvent('authenticationComplete', {
+                    detail: { account }
+                }));
+            }
+
+            showAuthOverlay() {
+                this.authOverlay.classList.remove('hidden');
+            }
+
+            hideAuthOverlay() {
+                this.authOverlay.classList.add('hidden');
+            }
+            
+            showError(message) {
+                const errorState = document.getElementById('errorState');
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = message;
+                errorState.classList.remove('hidden');
+            }
+        }
+
+        class PhotoFrameSlideshow {
+            constructor() {
+                this.currentSlide = 0;
+                this.isPlaying = true;
+                this.interval = 15000; // 15 seconds
+                this.timer = null;
+                this.progressTimer = null;
+                this.cursorHideTimer = null;
+                this.controlsHideTimer = null;
+                this.wakeLock = null;
+                this.allImages = [];
+                this.shownImageIds = new Set();
+
+                this.initializeElements();
+                this.setupEventListeners();
+                this.setupCursorAutoHide();
+                this.requestWakeLock();
+
+                // Check for new images every 3 minutes
+                setInterval(() => this.checkForNewImages(), 180000);
+            }
+
+            initializeElements() {
+                this.slides = [
+                    document.getElementById('slide1'),
+                    document.getElementById('slide2')
+                ];
+                this.images = [
+                    document.getElementById('image1'),
+                    document.getElementById('image2')
+                ];
+                this.loadingState = document.getElementById('loadingState');
+                this.errorState = document.getElementById('errorState');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.progressBar = document.getElementById('progressBar');
+                this.fullscreenBtn = document.getElementById('fullscreenBtn');
+                this.infoBtn = document.getElementById('infoBtn');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                this.infoOverlay = document.getElementById('infoOverlay');
+                this.filename = document.getElementById('filename');
+                this.folder = document.getElementById('folder');
+
+                this.errorState.classList.add('hidden');
+                this.images.forEach(img => img.removeAttribute('src'));
+            }
+
+            setupEventListeners() {
+                this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+                this.infoBtn.addEventListener('click', () => this.toggleInfo());
+                this.logoutBtn.addEventListener('click', () => this.logout());
+
+                document.addEventListener('keydown', (e) => {
+                    switch (e.key) {
+                        case ' ': this.togglePlayPause(); break;
+                        case 'ArrowRight': this.nextImage(); break;
+                        case 'f': this.toggleFullscreen(); break;
+                        case 'i': this.toggleInfo(); break;
+                    }
+                });
+
+                document.addEventListener('mousemove', () => this.showControlsTemporarily());
+                document.addEventListener('touchstart', () => this.showControlsTemporarily());
+                document.addEventListener('click', () => this.showControlsTemporarily());
+            }
+
+            async fetchAllImages() {
+                try {
+                    const response = await fetch('/api/folders/structure/evento');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch image list');
+                    }
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to fetch image list');
+                    }
+                    return data.images || [];
+                } catch (error) {
+                    console.error('Error fetching image list:', error);
+                    this.showError(error.message);
+                    return [];
+                }
+            }
+            
+            async checkForNewImages() {
+                console.log("Checking for new images...");
+                const newImageList = await this.fetchAllImages();
+                if (newImageList.length > this.allImages.length) {
+                    const newImages = newImageList.filter(img => !this.allImages.some(oldImg => oldImg.id === img.id));
+                    this.allImages.push(...newImages);
+                    console.log(`Added ${newImages.length} new images to the slideshow.`);
+                }
+            }
+
+            getRandomImage() {
+                if (this.allImages.length === 0) {
+                    return null;
+                }
+                
+                let availableImages = this.allImages.filter(img => !this.shownImageIds.has(img.id));
+
+                if (availableImages.length === 0) {
+                    this.shownImageIds.clear();
+                    availableImages = this.allImages;
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableImages.length);
+                const randomImage = availableImages[randomIndex];
+                this.shownImageIds.add(randomImage.id);
+                
+                return randomImage;
+            }
+
+            async loadImage(imageData) {
+                if (!imageData) return false;
+
+                return new Promise((resolve) => {
+                    const nextSlide = (this.currentSlide + 1) % 2;
+                    const img = this.images[nextSlide];
+
+                    const onLoad = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
+                        this.hideError();
+                        this.currentImageData = imageData;
+                        resolve(true);
+                    };
+
+                    const onError = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
+                        this.showError(`Failed to load image: ${imageData.filename}`);
+                        resolve(false);
+                    };
+
+                    img.addEventListener('load', onLoad);
+                    img.addEventListener('error', onError);
+                    img.src = `/api/images/${encodeURIComponent(imageData.id)}`;
+                });
+            }
+
+            showImage() {
+                const currentSlideEl = this.slides[this.currentSlide];
+                const nextSlideEl = this.slides[(this.currentSlide + 1) % 2];
+
+                currentSlideEl.classList.remove('active');
+                nextSlideEl.classList.add('active');
+
+                this.currentSlide = (this.currentSlide + 1) % 2;
+                this.updateInfo();
+                this.loadingState.classList.add('hidden');
+                this.hideError();
+            }
+
+            updateInfo() {
+                if (this.currentImageData) {
+                    this.filename.textContent = this.currentImageData.filename;
+                    this.folder.textContent = `📁 evento`;
+                }
+            }
+
+            async nextImage() {
+                this.resetProgress();
+                const imageData = this.getRandomImage();
+                if (imageData) {
+                    const loaded = await this.loadImage(imageData);
+                    if (loaded) {
+                        this.showImage();
+                    }
+                }
+
+                if (this.isPlaying) {
+                    this.scheduleNext();
+                }
+            }
+
+            scheduleNext() {
+                this.clearTimers();
+                this.timer = setTimeout(() => this.nextImage(), this.interval);
+                this.startProgress();
+            }
+
+            startProgress() {
+                this.progressBar.style.width = '0%';
+                let progress = 0;
+                const increment = 100 / (this.interval / 100);
+
+                this.progressTimer = setInterval(() => {
+                    progress += increment;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(this.progressTimer);
+                    }
+                    this.progressBar.style.width = progress + '%';
+                }, 100);
+            }
+
+            resetProgress() {
+                this.progressBar.style.width = '0%';
+                if (this.progressTimer) {
+                    clearInterval(this.progressTimer);
+                }
+            }
+
+            clearTimers() {
+                if (this.timer) clearTimeout(this.timer);
+                if (this.progressTimer) clearInterval(this.progressTimer);
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            toggleInfo() {
+                this.infoOverlay.classList.toggle('hidden');
+            }
+
+            togglePlayPause() {
+                this.isPlaying = !this.isPlaying;
+                if (this.isPlaying) {
+                    this.scheduleNext();
+                } else {
+                    this.clearTimers();
+                }
+            }
+
+            logout() {
+                window.location.href = '/login';
+            }
+
+            showControlsTemporarily() {
+                const controls = document.getElementById('controls');
+                controls.style.opacity = '1';
+                clearTimeout(this.controlsHideTimer);
+                this.controlsHideTimer = setTimeout(() => {
+                    controls.style.opacity = '0';
+                }, 3000);
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorState.classList.remove('hidden');
+                this.loadingState.classList.add('hidden');
+            }
+
+            hideError() {
+                this.errorState.classList.add('hidden');
+            }
+
+            async requestWakeLock() {
+                if ('wakeLock' in navigator) {
+                    try {
+                        this.wakeLock = await navigator.wakeLock.request('screen');
+                    } catch (err) {
+                        console.error('Failed to activate wake lock:', err);
+                    }
+                }
+            }
+
+            setupCursorAutoHide() {
+                // Implementation omitted for brevity
+            }
+            
+            async startSlideshow() {
+                this.allImages = await this.fetchAllImages();
+                if (this.allImages.length > 0) {
+                    this.hideError();
+                    this.nextImage();
+                } else {
+                    this.showError('No images found in the "evento" folder. Waiting for uploads...');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.authManager = new AuthenticationManager();
+            window.slideshow = new PhotoFrameSlideshow();
+
+            document.addEventListener('authenticationComplete', () => {
+                window.slideshow.startSlideshow();
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Images</title>
+  <link rel="stylesheet" href="/css/folder-selection-extensions.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Upload Images to the Event</h1>
+    <p>Select images to add to the slideshow.</p>
+    <form id="upload-form" action="/api/images/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="images" id="image-input" multiple accept=".png,.jpg,.jpeg,.webp,.bmp,.avif,.heif">
+      <button type="submit">Upload</button>
+    </form>
+    <div id="upload-status"></div>
+  </div>
+
+  <script>
+    document.getElementById('upload-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const statusDiv = document.getElementById('upload-status');
+
+      try {
+        statusDiv.textContent = 'Uploading...';
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          statusDiv.textContent = 'Upload successful!';
+          form.reset();
+        } else {
+          const error = await response.json();
+          statusDiv.textContent = `Upload failed: ${error.message}`;
+        }
+      } catch (error) {
+        statusDiv.textContent = `Upload failed: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
