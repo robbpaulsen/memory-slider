@@ -50,9 +50,9 @@ class ViewController {
     res.sendFile(path.join(__dirname, '..', 'public', 'upload.html'));
   }
 
-  // Redirect root to slideshow
-  redirectToSlideshow(req, res) {
-    res.redirect('/slideshow');
+  // Serve QR code page
+  serveQrCodePage(req, res) {
+    res.sendFile(path.join(__dirname, '..', 'public', 'qr-code.html'));
   }
 }
 

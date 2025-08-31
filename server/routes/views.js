@@ -5,7 +5,7 @@ const authController = require('../controllers/authController');
 const { requireAuth, requireGuest, hasRole } = require('../middleware/auth');
 
 // Public routes
-router.get('/', viewController.redirectToSlideshow.bind(viewController));
+router.get('/', viewController.serveQrCodePage.bind(viewController));
 router.get('/slideshow', viewController.serveSlideshow.bind(viewController));
 router.get('/folder-selection', viewController.serveFolderSelection.bind(viewController));
 router.get('/login', requireGuest, viewController.serveLogin.bind(viewController));

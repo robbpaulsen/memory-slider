@@ -4,10 +4,12 @@ const imageController = require('../controllers/imageController');
 const folderController = require('../controllers/folderController');
 const accessAccountController = require('../controllers/accessAccountController');
 const googlePhotosController = require('../controllers/googlePhotosController');
+const authController = require('../controllers/authController');
 const upload = require('../middleware/upload');
 const { requireAuth } = require('../middleware/auth');
 
 // Health check endpoint
+router.get('/qr-code', authController.generateQrCode.bind(authController));
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });

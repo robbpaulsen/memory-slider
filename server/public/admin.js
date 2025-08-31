@@ -992,21 +992,31 @@ class PhotoFrameAdmin {
 
     async logout() {
         try {
-            const response = await this.authenticatedFetch('/api/auth/logout', {
-                method: 'POST'
+            const response = await this.authenticatedFetch('/auth/logout', {
+                method: 'GET'
             });
-            
+
             if (response && response.ok) {
                 this.showToast('Logging out...', 'info');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 1000);
             } else {
-                this.showToast('Logout failed', 'error');
+                // It's possible the server redirects, which fetch treats as an opaque redirect
+                // In that case, the response might not be "ok" but the logout worked.
+                // So, we'll redirect anyway.
+                this.showToast('Logging out...', 'info');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1000);
             }
         } catch (error) {
             console.error('Error during logout:', error);
-            this.showToast('Logout failed', 'error');
+            // Also redirect on error, as the session might be invalid anyway
+            this.showToast('Logout failed, redirecting...', 'error');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
         }
     }
 
