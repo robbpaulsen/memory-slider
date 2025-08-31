@@ -413,7 +413,224 @@
 
                     img.addEventListener('load', onLoad);
                     img.addEventListener('error', onError);
-                    img.src = `/api/images/${encodeURIComponent(imageData.id)}`;
+                                        return data.images || [];
+                } catch (error) {
+                    console.error('Error fetching image list:', error);
+                    this.showError(error.message);
+                    return [];
+                }
+            }
+            
+            async checkForNewImages() {
+                console.log("Checking for new images...");
+                const newImageList = await this.fetchAllImages();
+                if (newImageList.length > this.allImages.length) {
+                    const newImages = newImageList.filter(img => !this.allImages.some(oldImg => oldImg.id === img.id));
+                    this.allImages.push(...newImages);
+                    console.log(`Added ${newImages.length} new images to the slideshow.`);
+                }
+            }
+
+            getRandomImage() {
+                if (this.allImages.length === 0) {
+                    return null;
+                }
+                
+                let availableImages = this.allImages.filter(img => !this.shownImageIds.has(img.id));
+
+                if (availableImages.length === 0) {
+                    this.shownImageIds.clear();
+                    availableImages = this.allImages;
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableImages.length);
+                const randomImage = availableImages[randomIndex];
+                this.shownImageIds.add(randomImage.id);
+                console.log('Random image data:', randomImage); // Added
+                
+                return randomImage;
+            }
+
+            async loadImage(imageData) {
+                if (!imageData) return false;
+                console.log('Loading image:', imageData); // Added
+
+                return new Promise((resolve) => {
+                    const nextSlide = (this.currentSlide + 1) % 2;
+                    const img = this.images[nextSlide];
+
+                    const onLoad = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
+                        this.hideError();
+                        this.currentImageData = imageData;
+                        resolve(true);
+                    };
+
+                    const onError = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
+                        this.showError(`Failed to load image: ${imageData.filename}`);
+                        resolve(false);
+                    };
+
+                    img.addEventListener('load', onLoad);
+                    img.addEventListener('error', onError);
+                    img.src = imageData.url; // Changed from `/api/images/${encodeURIComponent(imageData.id)}`
+                });
+            }
+
+            showImage() {
+                const currentSlideEl = this.slides[this.currentSlide];
+                const nextSlideEl = this.slides[(this.currentSlide + 1) % 2];
+
+                currentSlideEl.classList.remove('active');
+                nextSlideEl.classList.add('active');
+
+                this.currentSlide = (this.currentSlide + 1) % 2;
+                this.updateInfo();
+                this.loadingState.classList.add('hidden');
+                this.hideError();
+            }
+
+            updateInfo() {
+                if (this.currentImageData) {
+                    this.filename.textContent = this.currentImageData.filename;
+                    this.folder.textContent = `📁 evento`;
+                }
+            }
+
+            async nextImage() {
+                this.resetProgress();
+                const imageData = this.getRandomImage();
+                if (imageData) {
+                    const loaded = await this.loadImage(imageData);
+                    if (loaded) {
+                        this.showImage();
+                    }
+                }
+
+                if (this.isPlaying) {
+                    this.scheduleNext();
+                }
+            }
+
+            scheduleNext() {
+                this.clearTimers();
+                this.timer = setTimeout(() => this.nextImage(), this.interval);
+                this.startProgress();
+            }
+
+            startProgress() {
+                this.progressBar.style.width = '0%';
+                let progress = 0;
+                const increment = 100 / (this.interval / 100);
+
+                this.progressTimer = setInterval(() => {
+                    progress += increment;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(this.progressTimer);
+                    }
+                    this.progressBar.style.width = progress + '%';
+                }, 100);
+            }
+
+            resetProgress() {
+                this.progressBar.style.width = '0%';
+                if (this.progressTimer) {
+                    clearInterval(this.progressTimer);
+                }
+            }
+
+            clearTimers() {
+                if (this.timer) clearTimeout(this.timer);
+                if (this.progressTimer) clearInterval(this.progressTimer);
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            toggleInfo() {
+                this.infoOverlay.classList.toggle('hidden');
+            }
+
+            togglePlayPause() {
+                this.isPlaying = !this.isPlaying;
+                if (this.isPlaying) {
+                    this.scheduleNext();
+                } else {
+                    this.clearTimers();
+                }
+            }
+
+            logout() {
+                window.location.href = '/login';
+            }
+
+            showControlsTemporarily() {
+                const controls = document.getElementById('controls');
+                controls.style.opacity = '1';
+                clearTimeout(this.controlsHideTimer);
+                this.controlsHideTimer = setTimeout(() => {
+                    controls.style.opacity = '0';
+                }, 3000);
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorState.classList.remove('hidden');
+                this.loadingState.classList.add('hidden');
+            }
+
+            hideError() {
+                this.errorState.classList.add('hidden');
+            }
+
+            async requestWakeLock() {
+                if ('wakeLock' in navigator) {
+                    try {
+                        this.wakeLock = await navigator.wakeLock.request('screen');
+                    }
+                    catch (err) {
+                        console.error('Failed to activate wake lock:', err);
+                    }
+                }
+            }
+
+            setupCursorAutoHide() {
+                // Implementation omitted for brevity
+            }
+            
+            async startSlideshow() {
+                this.allImages = await this.fetchAllImages();
+                if (this.allImages.length > 0) {
+                    this.hideError();
+                    this.nextImage();
+                } else {
+                    this.showError('No images found in the "evento" folder. Waiting for uploads...');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.authManager = new AuthenticationManager();
+            window.slideshow = new PhotoFrameSlideshow();
+
+            document.addEventListener('authenticationComplete', () => {
+                window.slideshow.startSlideshow();
+            });
+        });
+    </script>
+</body>
+
+</html>
+
                 });
             }
 

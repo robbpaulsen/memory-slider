@@ -34,7 +34,7 @@ class ImageController {
           path: fullPath,
           relativePath: path.relative(this.uploadsDir, fullPath),
           folder: path.basename(path.dirname(fullPath)),
-          id: path.relative(this.uploadsDir, fullPath) // Use relative path as unique ID
+          id: path.relative(this.uploadsDir, fullPath).replace(/\\/g, '/') // Replace backslashes with forward slashes
         };
         images.push(imageData);
       }

@@ -8,6 +8,9 @@ const fs = require('fs-extra');
 const session = require('express-session');
 
 // Import middleware
+const multer = require('multer'); // Added
+
+// Import middleware
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -58,6 +61,17 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // Routes
 app.use('/', routes);
+
+// Multer error handling middleware (added)
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      message: err.message,
+      code: err.code
+    });
+  }
+  next(err); // Pass other errors to the general error handler
+});
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

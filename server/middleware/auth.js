@@ -2,46 +2,55 @@ const bcrypt = require('bcryptjs');
 
 // Check if user is authenticated
 const requireAuth = (req, res, next) => {
-  console.log('🔐 Auth Check:', {
+  console.log('🔐 Auth Check - Start:', {
     sessionId: req.sessionID,
     hasSession: !!req.session,
     authenticated: req.session?.authenticated,
     role: req.session?.role,
     path: req.path,
+    originalUrl: req.originalUrl, // Added
     cookies: req.headers.cookie ? 'present' : 'missing'
   });
 
+  const isApiRequest = req.path.startsWith('/api/') || req.originalUrl.startsWith('/api/');
+  console.log('🔐 Auth Check - isApiRequest:', isApiRequest); // Added
+
   if (req.session && req.session.authenticated) {
+    console.log('🔐 Auth Check - User is authenticated.'); // Added
     const sessionMaxAge = 24 * 60 * 60 * 1000; // 24 hours
     const loginTime = req.session.loginTime ? new Date(req.session.loginTime) : null;
 
     if (loginTime && (Date.now() - loginTime.getTime()) > sessionMaxAge) {
+      console.log('🔐 Auth Check - Session expired.'); // Added
       req.session.destroy((err) => {
         if (err) console.error('Error destroying expired session:', err);
       });
-      const isApiRequest = req.path.startsWith('/api/') || req.originalUrl.startsWith('/api/');
       if (isApiRequest) {
+        console.log('🔐 Auth Check - Sending 401 JSON for expired API session.'); // Added
         return res.status(401).json({
           message: 'Session expired',
           code: 'SESSION_EXPIRED',
           redirect: '/login'
         });
       }
+      console.log('🔐 Auth Check - Redirecting to login for expired non-API session.'); // Added
       return res.redirect('/login?expired=true');
     }
 
+    console.log('🔐 Auth Check - Session valid, continuing.'); // Added
     return next();
   }
 
   console.log('❌ Authentication failed for:', req.path);
-  const isApiRequest = req.path.startsWith('/api/') || req.originalUrl.startsWith('/api/');
   if (isApiRequest) {
+    console.log('❌ Auth Check - Sending 401 JSON for unauthenticated API request.'); // Added
     return res.status(401).json({
       message: 'Authentication required',
       code: 'AUTH_REQUIRED',
       redirect: '/login'
     });
   }
+  console.log('❌ Auth Check - Redirecting to login for unauthenticated non-API request.'); // Added
   return res.redirect('/login');
 };
 

@@ -28,3 +28,12 @@ $RECYCLE.BIN/
 # test local files
 .env
 Agents.md
+server/uploads/evento/*.jpg
+server/uploads/evento/*.jpeg
+server/uploads/evento/*.webp
+server/uploads/evento/*.png
+server/uploads/evento/*.gif
+server/uploads/evento/*.heif
+server/uploads/evento/*.bmp
+server/uploads/evento/*.tiff
+server/uploads/evento/*.svg
