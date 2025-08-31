@@ -1,10 +1,10 @@
 # Marco de Fotos Digital para Eventos Sociales
 
-Esta es una versión adaptada de la aplicación de marco de fotos digital, diseñada específicamente para ser utilizada en eventos sociales. Permite a los invitados subir fotos fácilmente a través de un código QR, que se añaden al instante a una presentación de diapositivas continua.
+Esta es una versión adaptada de la aplicación [digital-photo-phrame](https://github.com/Sorbh/digital-photo-frame), pero refactorizada específicamente para ser utilizada en eventos sociales. Permite a los invitados subir fotos fácilmente a través de un código QR y se agregan al instante a una presentación de diapositivas continua.
 
 ## 🌟 Características Principales
 
--   **Subida de Fotos por QR:** Los invitados escanean un código QR para acceder a una página de subida simple, sin necesidad de credenciales.
+-   **Carga de Fotos por QR:** Los invitados escanean un código QR para acceder a una página de subida simple, sin necesidad de credenciales.
 -   **Presentación Automática:** La aplicación inicia una presentación de diapositivas en bucle en cuanto se sube la primera imagen.
 -   **Actualización en Tiempo Real:** El slideshow busca nuevas imágenes cada 3 minutos y las añade a la cola de reproducción de forma aleatoria.
 -   **Directorio Único:** Todas las imágenes se gestionan en una única carpeta (`evento`) para simplificar la configuración.
@@ -22,8 +22,8 @@ Sigue estos pasos para desplegar la aplicación en tu dispositivo (ej. Raspberry
 ### Paso 1: Clonar el Repositorio
 
 ```bash
-git clone https://github.com/sorbh/digital-photo-frame.git
-cd digital-photo-frame
+git clone https://github.com/robbpaulsen/memory-slider.git
+cd memory-slider
 ```
 
 ### Paso 2: Configurar el Entorno
@@ -92,9 +92,19 @@ Una vez desplegada, la aplicación estará accesible en la red local de tu dispo
     *   Para gestionar la aplicación, puedes acceder al panel de administración en `http://<IP_DEL_DISPOSITIVO>:3000/admin`.
     *   Usa la contraseña que estableciste en el archivo `.env`.
 
-## 🛠️ Pila Tecnológica
+## 🛠️ Stack de Tecnológica usada
 
--   **Backend:** Node.js, Express
 -   **Frontend:** HTML, CSS, JavaScript (sin frameworks)
--   **Procesamiento de Imágenes:** Sharp
 -   **Contenerización:** Docker, Docker Compose
+-   **Procesamiento de Imágenes:** Sharp
+-   **Backend:** Node.js, Express
+
+## Hardware de despliegue
+
+- Raspberry Pi 4
+- Cualquier TV o Smart TV
+
+#### Original Code and Author:
+
+- **[Sorbh](https://github.com/Sorbh)**
+- **[Digital-Photo-Frame](https://github.com/Sorbh/digital-photo-frame)**
