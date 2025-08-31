@@ -3,55 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Images</title>
-  <link rel="stylesheet" href="/css/folder-selection-extensions.css">
+  <title>Comparte tus Imagenes</title>
   <!-- Add Tailwind CSS for styling -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/basecoat.cdn.min.css">
   <style>
-    body {
-      background-color: #6b6fd5;
-    }
-    /* Custom file input styling */
-    .custom-file-input {
-      display: inline-block;
-      cursor: pointer;
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background-color: var(--background);
-      color: #80cbc4; /* Changed text color */
-      font-weight: bold; /* Added bold */
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-    .custom-file-input:hover {
-      background-color: var(--muted);
-      border-color: var(--accent);
-    }
-    .custom-file-input input[type="file"] {
-      display: none; /* Hide the actual file input */
-    }
-    .btn-primary { /* Targeting the Upload button */
-      color: #80cbc4; /* Changed text color */
-      font-weight: bold; /* Added bold */
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #2c123f;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .card {
+            background-color: #3b1954;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px dashed #64398e;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-label:hover {
+            border-color: #8c53bb;
+        }
+        /* Color principal para los textos */
+        .text-primary {
+            color: #84d2d1;
+        }
+        /* Color para los botones de accion y elementos principales */
+        .bg-action {
+            background-color: #dc1f83;
+        }
+        .bg-action:hover {
+            background-color: #a41961;
+        }
+        /* Color para el boton de carga */
+        .bg-submit {
+            background-color: #ecb979;
+            color: #2c123f;
+        }
+        .bg-submit:hover {
+            background-color: #c99c68;
+        }
   </style>
 </head>
 <body>
-  <div class="container flex items-center justify-center min-h-screen">
-    <div class="card max-w-md w-full mx-4" style="background-color: #ed67ff;"> <!-- Changed card background color -->
-      <h1 class="text-2xl font-bold mb-4">Upload Images to the Event</h1>
-      <p class="text-muted-foreground mb-6">Select images to add to the slideshow.</p>
-      <form id="upload-form" action="/api/upload" method="post" enctype="multipart/form-data" class="grid gap-4">
-        <label for="image-input" class="custom-file-input">
-          Choose Files
-          <input type="file" name="images" id="image-input" multiple accept=".png,.jpg,.jpeg,.webp,.bmp,.avif,.heif">
-        </label>
-        <button type="submit" class="btn btn-primary">Upload</button>
-      </form>
-      <div id="upload-status" class="mt-4 text-sm text-muted-foreground"></div>
+<div class="container">
+    <div id="upload-card" class="card p-8 transition-all duration-500">
+        <div class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-primary mb-2">¡Comparte tus Recuerdos! ✨</h1>
+            <p class="text-base text-gray-400 mb-6">Sube tus fotos para que aparezcan en el carrusel de la pantalla.</p>
+        </div>
+
+        <!-- Formulario para subir la foto -->
+        <form id="uploadForm" class="space-y-6">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-300">Tu Nombre (opcional)</label>
+                <input type="text" id="name" name="name" class="mt-1 block w-full px-3 py-2 bg-[#4a246b] border border-gray-600 rounded-md shadow-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-[#84d2d1] focus:border-[#84d2d1] sm:text-sm" placeholder="Ingresa tu nombre...">
+            </div>
+
+            <div class="flex items-center justify-center w-full">
+                <label for="file-upload" class="file-upload-label px-6 pt-5 pb-6">
+                    <svg class="w-10 h-10 text-primary" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 4-4v5zm0 0l-4-4-3 6-4-8-4 8H4V5a1 1 0 011-1h10a1 1 0 011 1v10zm-4-9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="mt-2 text-base text-gray-300 font-medium">Arrastra y suelta o <span class="text-primary font-bold">selecciona una foto</span></span>
+                    <p class="text-sm text-gray-400">JPG, PNG, WEBP, BMP, HEIC</p>
+                </label>
+                <input id="file-upload" name="file-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/webp, image/bmp, image/heic, image/heif, .heic, .heif">
+            </div>
+
+            <p id="file-name" class="text-sm text-gray-300 text-center hidden"></p>
+            <p id="file-error" class="text-sm text-red-400 text-center hidden"></p>
+
+            <div class="flex items-start">
+                <div class="flex items-center h-5">
+                    <input id="terms" name="terms" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                </div>
+                <div class="ml-3 text-sm">
+                    <label for="terms" class="font-medium text-gray-300">Acepto los términos y condiciones.</label>
+                    <p class="text-gray-500">Al subir una foto, aceptas que eres el propietario de los derechos de la misma y eres responsable de su contenido.</p>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-button" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-action hover:bg-action focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc1f83] transition-colors duration-300" disabled>
+                Subir
+            </button>
+        </form>
     </div>
-  </div>
+
+    <!-- Pantalla de agradecimiento -->
+    <div id="thanks-card" class="card p-8 hidden">
+        <div class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-primary mb-4">¡Gracias! 🎉</h1>
+            <p class="text-lg text-gray-400 mb-6">Tu foto se ha recibido con éxito y aparecerá en la pantalla muy pronto. </p>
+            <p class="text-sm text-gray-400">Disfruta el evento.</p>
+        </div>
+    </div>
+</div>
 
   <script>
     document.getElementById('upload-form').addEventListener('submit', async (event) => {
