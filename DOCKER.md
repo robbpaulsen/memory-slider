@@ -1,79 +1,79 @@
-# Docker Setup for Digital Photo Frame
+# Configuración de Docker para el Marco de Fotos Digital
 
-This document explains how to run the Digital Photo Frame application using Docker.
+Este documento explica cómo ejecutar la aplicación de Marco de Fotos Digital usando Docker.
 
-## Quick Start
+## Inicio Rápido
 
-### Using Docker Compose (Recommended)
+### Usando Docker Compose (Recomendado)
 
-1. **Copy environment configuration:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Edit the .env file with your settings:**
-   ```bash
-   # Essential settings - change these for security
-   SESSION_SECRET=your-secure-session-secret-here
-   ADMIN_PASSWORD=your-secure-admin-password
-   
-   # Optional: Change port (default is 3000)
-   HOST_PORT=8080  # Access app on http://localhost:8080
-   ```
-
-3. **Start the application:**
-   ```bash
-   docker compose up -d
-   ```
-
-4. **Access the application:**
-   - Open http://localhost:3000 in your browser (or your custom HOST_PORT)
-   - Default admin password: `admin123` (or your custom ADMIN_PASSWORD)
-
-5. **Stop the application:**
-   ```bash
-   docker compose down
-   ```
-
-### Using Docker Build (Manual)
-
-1. **Build the image:**
-   ```bash
-   docker build -t digital-photo-frame .
-   ```
-
-2. **Run the container:**
-   ```bash
-   docker run -d \
-     --name photo-frame \
-     -p 3000:3000 \
-     -e SESSION_SECRET=your-secure-session-secret \
-     -v photo-uploads:/app/uploads \
-     -v photo-data:/app/data \
-     digital-photo-frame
-   ```
-
-## Configuration
-
-### Quick Configuration Examples
-
-**Change Port:**
+1. **Copia la configuración del entorno:**
 ```bash
-# Use port 8080 instead of 3000
-echo "HOST_PORT=8080" >> .env
-docker compose up -d
-# Access at http://localhost:8080
+$ cp .env.example .env
+ ```
+
+2. **Edita el archivo .env con tu configuración:**
+```bash
+# Configuraciones esenciales - cámbialas por seguridad
+SESSION_SECRET=your-secure-session-secret-here
+ADMIN_PASSWORD=your-secure-admin-password
+   
+# Opcional: Cambia el puerto (el predeterminado es 3000)
+HOST_PORT=8080  # Accede a la app en http://localhost:8080
+```
+
+3. **Inicia la aplicación:**
+```bash
+$ docker compose up -d
+```
+
+4. **Accede a la aplicación:**
+   - Abre http://localhost:3000 en tu navegador (o el `HOST_PORT` que personalizaste).
+   - Contraseña de administrador predeterminada: `admin123` (o la que hayas configurado en `ADMIN_PASSWORD`).
+
+5. **Detén la aplicación:**
+```bash
+$ docker compose down
+```
+
+### Usando Docker Build (Manualmente)
+
+1. **Construye la imagen:**
+```bash
+$ docker build -t digital-photo-frame .
+```
+
+2. **Ejecuta el contenedor:**
+```bash
+$ docker run -d \
+   --name photo-frame \
+   -p 3000:3000 \
+   -e SESSION_SECRET=your-secure-session-secret \
+   -v photo-uploads:/app/uploads \
+   -v photo-data:/app/data \
+   digital-photo-frame
+```
+
+## Configuración
+
+### Ejemplos de Configuración Rápida
+
+**Cambiar el Puerto:**
+```bash
+# Usa el puerto 8080 en lugar del 3000
+$ echo "HOST_PORT=8080" >> .env
+$ docker compose up -d
+# Accede en http://localhost:8080
 ```
 
 **Secure Admin Password:**
 ```bash
 # Set custom admin password
-echo "ADMIN_PASSWORD=MySecurePassword123!" >> .env
-docker compose up -d
+$ echo "ADMIN_PASSWORD=MySecurePassword123!" >> .env
+$ docker compose up -d
 ```
 
-**Multiple Options:**
-```bash
+**Opciones Multiples:**
+```ini
 # .env file example
 HOST_PORT=8080
 ADMIN_PASSWORD=SecurePass123!
@@ -93,24 +93,24 @@ SESSION_SECRET=$(openssl rand -base64 32)
 | `GOOGLE_CLIENT_SECRET` | Google Photos API secret | No | - |
 | `GOOGLE_REDIRECT_URI` | Google OAuth redirect URI | No | - |
 
-### Volumes
+### Volumenes
 
-The Docker setup creates persistent volumes for:
+La configuracion de docker configura los siguientes volumenes:
 
-- **photo-uploads**: Stores uploaded images (`/app/uploads`)
-- **photo-data**: Stores application data like access accounts (`/app/data`)
-- **photo-logs**: Stores application logs (`/app/logs`)
+- **photo-uploads**: Guarda las imagenes cargadas por los invitados (`/app/uploads`)
+- **photo-data**: Guarda los datos de la aplicacion (`/app/data`)
+- **photo-logs**: Guarda los registros de la aplicacion (`/app/logs`)
 
 ### Password Security
 
 The application supports both plain text and bcrypt hashed passwords:
 
-**Plain Text (Development):**
-```bash
+**En texto plano (para el entorno de desarrollo):**
+```ini
 ADMIN_PASSWORD=MyPassword123
 ```
 
-**Bcrypt Hashed (Production):**
+**En hash tipo Bcrypt para producción:**
 ```bash
 # Generate bcrypt hash (example using Node.js)
 node -e "const bcrypt=require('bcryptjs'); console.log(bcrypt.hashSync('MyPassword123', 10))"
@@ -120,59 +120,38 @@ ADMIN_PASSWORD=$2b$10$xyz...  # Your bcrypt hash
 
 ⚠️ **Security Warning:** The default password `admin123` is used if no `ADMIN_PASSWORD` is set. Always change this in production!
 
-## Health Check
+## Revision de Salud
 
-The container includes a health check that verifies the application is responding:
+El contenedor incluye un chequeo de salud que verifica si la aplicacion esta respondiendo:
 
 ```bash
 # Check container health
-docker compose ps
+$ docker compose ps
 
 # Test health endpoint directly
-curl http://localhost:3000/api/health
+$ curl http://localhost:3000/api/health
 ```
 
 ## Troubleshooting
 
-### Container won't start
-- Check if port 3000 is already in use: `lsof -i :3000`
-- Verify environment variables are set correctly
-- Check container logs: `docker compose logs photo-frame`
+### El contenenedor no inicia:
+- Revisa si el puerto 3000 esta disponible y/o protegido por firewall.
+- Verifica que las variables de entorno fueron definidas correctamente.
+- Revisa los registros del contenedor: `docker compose logs photo-frame`
 
-### Images not persisting
-- Ensure volumes are mounted correctly
-- Check volume permissions: `docker compose exec photo-frame ls -la /app/uploads`
+### Imagenes no persistentes o perdida de las imagenes al reiniciar el contenedor:
+- Asegurar que los volumenes fueron creados.
+- Asegurar que los volumenes fueron montados correctamente en las rutas especificadas.
+- Revisar los permisos de los volumenes: `docker compose exec photo-frame ls -la /app/uploads`
 
-### Google Photos integration not working
-- Verify Google OAuth credentials in `.env`
-- Ensure redirect URI matches your domain
-- Check container logs for authentication errors
+### Integracion con Google Photos:
+###### NOTA: Esta  funcion tal vez sea removida puesto que no le encuentro un uso para las metas que tiene este proyecto.
+- Asegurar la integracion de Google Photos este comunicandose correctamente.
+- Verificar las credenciales de Google OAuth este correctamente declaradas en `.env`
+- Revisar que la URI actual y la declarada concuerden correctamente.
+- Revisar los registros del contenedor por errores de autenticacion.
 
-## Development
+## Desarrollo
 
-For development with live reloading, you can mount the source code:
-
-```bash
-# Add to docker-compose.yml under volumes:
-- ./server:/app
-- /app/node_modules  # Prevent overwriting container's node_modules
-```
-
-## Production Deployment
-
-For production deployment:
-
-1. **Set secure environment variables:**
-   - Use a strong `SESSION_SECRET` (32+ characters)
-   - Set `NODE_ENV=production`
-
-2. **Use a reverse proxy:**
-   - Consider using nginx or traefik in front of the container
-   - Enable HTTPS for secure sessions
-
-3. **Backup volumes:**
-   - Regularly backup the `photo-uploads` and `photo-data` volumes
-
-4. **Monitor resources:**
-   - The Sharp image processing library can be memory-intensive
-   - Monitor container resource usage under load
+Para desarrollo, se aceptan sugerencias directamente al correo, no se le dara acceso por el momento y tal vez 
+jamas al proyecto a nadie y intentar levantar ISSUES, estaran desactivados.
