@@ -7,13 +7,17 @@
 - Se creó server/public/js/qr-code.js para obtener y mostrar el código QR.
 - Se añadió la función serveQrCodePage en server/controllers/viewController.js.
 - Se modificó server/routes/views.js para servir qr-code.html en la URL raíz (/).
+- Nueva Dependencia: Se añadió la librería qrcode al proyecto para poder crear los códigos QR.
+- API para el QR: Se creó una nueva ruta en la API (/api/qr-code) con su lógica correspondiente en el controlador (authController.js) para generar la imagen del código QR de forma dinámica.
+- Página Principal: La página de inicio (/) ahora muestra este código QR. Se crearon los archivos HTML (qr-code.html) y JavaScript (qr-code.js) necesarios para solicitar y renderizar la imagen del QR en el navegador.
+- Instalación: Se destaca como un paso importante reinstalar las dependencias del proyecto ejecutando npm install para incluir la nueva librería de qrcode.
 
 ## Paso importante:
 
-Se reinstalo con 
+Reinstalar con:
 
 ```bash
 $ npm install && npm run dev
 ```
 
- http://localhost:3000/ para ver el código QR.
+ http://localhost:3000/ # para ver el código QR.
